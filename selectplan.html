@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Wähle deinen Plan</title>
+    <style>
+        body { background: #121212; color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; gap: 20px; }
+        .card { background: #1e1e1e; border: 1px solid #333; padding: 40px; border-radius: 15px; text-align: center; width: 250px; }
+        .card.pro { border-color: #007acc; box-shadow: 0 0 20px rgba(0,122,204,0.3); }
+        .price { font-size: 2rem; font-weight: bold; margin: 20px 0; }
+        button { background: #007acc; color: white; border: none; padding: 15px; width: 100%; border-radius: 5px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h3>FREE</h3>
+        <div class="price">0€</div>
+        <p>Lokal arbeiten<br>Standard Features</p>
+        <button onclick="goApp('free')">Auswählen</button>
+    </div>
+    <div class="card pro">
+        <h3>PRO ⭐</h3>
+        <div class="price">9,99€</div>
+        <p>Cloud Sync<br>Keine Werbung</p>
+        <button onclick="goApp('pro')" style="background: #ffca28; color: black;">Upgrade Jetzt</button>
+    </div>
+
+    <script>
+        function goApp(plan) {
+            localStorage.setItem('userPlan', plan); // Simpler Check für die Demo
+            window.location.href = "app.html";
+        }
+    </script>
+</body>
+</html>
