@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Login - Aeropus</title>
+    <style>
+        body { background: #121212; color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .auth-box { background: #1e1e1e; padding: 40px; border-radius: 12px; width: 320px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 5px; border: 1px solid #333; background: #252526; color: white; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; margin: 10px 0; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .google { background: white; color: black; }
+        .mail { background: #007acc; color: white; }
+    </style>
+</head>
+<body>
+    <div class="auth-box">
+        <h2>Willkommen</h2>
+        <input type="email" id="email" placeholder="E-Mail">
+        <input type="password" id="pw" placeholder="Passwort">
+        <button class="mail" onclick="loginEmail()">Login mit Email</button>
+        <hr style="border: 0; border-top: 1px solid #333; margin: 20px 0;">
+        <button class="google" onclick="loginGoogle()">Mit Google anmelden</button>
+        <button onclick="loginPhone()" style="background: #34a853; color: white;">Telefon-Login</button>
+        <div id="recaptcha-container"></div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+
+        const firebaseConfig = { apiKey: "AIzaSyANbzRM-mlNgrdM6zQ5ocKZQQGcn6S8I0w", authDomain: "aeropushtml.firebaseapp.com", projectId: "aeropushtml", storageBucket: "aeropushtml.firebasestorage.app", messagingSenderId: "880989352439", appId: "1:880989352439:web:0fcd894d24ff97010c3ef2" };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        window.loginGoogle = () => {
+            signInWithPopup(auth, new GoogleAuthProvider()).then(() => window.location.href = "selectplan.html");
+        };
+        window.loginEmail = () => {
+            const email = document.getElementById('email').value;
+            const pw = document.getElementById('pw').value;
+            signInWithEmailAndPassword(auth, email, pw).then(() => window.location.href = "app.html").catch(e => alert(e.message));
+        };
+    </script>
+</body>
+</html>
