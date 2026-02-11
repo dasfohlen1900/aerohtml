@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web-Codepad Pro + Cloud</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs/editor/editor.main.min.css">
+    <style>
+        :root { --bg: #1e1e1e; --menu-bg: #2d2d2d; --text: #e0e0e0; --accent: #007acc; --hover: #3e3e42; --success: #28a745; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
+
+        /* Menüleiste */
+        nav { 
+            background: var(--menu-bg); height: 35px; display: flex; align-items: center; 
+            padding: 0 10px; border-bottom: 1px solid #444; font-size: 14px; z-index: 1000;
+        }
+        .menu-item { position: relative; padding: 5px 12px; cursor: pointer; transition: background 0.2s; }
+        .menu-item:hover { background: var(--hover); }
+        
+        .dropdown { 
+            display: none; position: absolute; top: 100%; left: 0; 
+            background: var(--menu-bg); border: 1px solid #444; min-width: 180px; z-index: 100; 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+        }
+        .menu-item:hover .dropdown { display: block; }
+        .dropdown div { padding: 8px 15px; transition: background 0.2s; }
+        .dropdown div:hover { background: var(--accent); color: white; }
+
+        .right-menu { margin-left: auto; display: flex; align-items: center; }
+        
+        /* Editor & Preview */
+        #container { display: flex; height: calc(100vh - 35px); }
+        #editor { width: 50%; border-right: 1px solid #444; }
+        #preview { width: 50%; background: white; border: none; }
+
+        /* Status Toast */
+        #toast { 
+            position: fixed; bottom: 20px; right: 20px; background: var(--accent); 
+            color: white; padding: 10px 20px; border-radius: 4px; display: none; z-index: 2000;
+        }
+    </style>
+</head>
+<body>
+
+<nav id="menubar">
+    <div class="menu-item">
+        <span lang="de">Datei</span><span lang="en" style="display:none;">File</span>
+        <div class="dropdown">
+            <div onclick="newFile()" lang="de">Neu</div><div onclick="newFile()" lang="en" style="display:none;">New</div>
+            <div onclick="window.saveToCloud()" style="font-weight:bold; color: #4fc1ff;">Cloud Save</div>
+            <div onclick="window.copyShareLink()" lang="de">Link kopieren</div><div onclick="window.copyShareLink()" lang="en" style="display:none;">Copy Link</div>
+            <hr style="border:0; border-top:1px solid #555;">
+            <div onclick="downloadCode()" lang="de">Download (.html)</div><div onclick="downloadCode()" lang="en" style="display:none;">Download (.html)</div>
+        </div>
+    </div>
+
+    <div class="menu-item">
+        <span lang="de">Bearbeiten</span><span lang="en" style="display:none;">Edit</span>
+        <div class="dropdown">
+            <div onclick="triggerAction('undo')" lang="de">Rückgängig</div>
+            <div onclick="triggerAction('redo')" lang="de">Wiederholen</div>
+        </div>
+    </div>
+
+    <div class="menu-item">
+        <span lang="de">Ansicht</span><span lang="en" style="display:none;">View</span>
+        <div class="dropdown">
+            <div onclick="setTheme('vs-dark')">Dark Mode</div>
+            <div onclick="setTheme('vs-light')">Light Mode</div>
+            <div onclick="changeFontSize(18)">Schrift +</div>
+            <div onclick="changeFontSize(14)">Schrift -</div>
+        </div>
+    </div>
+
+    <div class="menu-item right-menu">
+        🌐 <span id="current-lang" style="margin-left:5px">DE</span>
+        <div class="dropdown" style="left: auto; right: 0;">
+            <div onclick="toggleLang('de')">Deutsch</div>
+            <div onclick="toggleLang('en')">English</div>
+        </div>
+    </div>
+</nav>
+
+<div id="container">
+    <div id="editor"></div>
+    <iframe id="preview"></iframe>
+</div>
+
+<div id="toast">Link kopiert!</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs/loader.min.js"></script>
+
+<script>
+    let editor;
+    const initialCode = `<!DOCTYPE html>\n<html>\n<head>\n    <title>Hello World</title>\n</head>\n<body>\n    <h1>Mein Codepad</h1>\n    <p>Willkommen im Cloud-Editor!</p>\n</body>\n</html>`;
+
+    // Monaco Setup
+    require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs' }});
+    require(['vs/editor/editor.main'], function() {
+        editor = monaco.editor.create(document.getElementById('editor'), {
+            value: initialCode,
+            language: 'html',
+            theme: 'vs-dark',
+            automaticLayout: true,
+            tabSize: 4,
+            minimap: { enabled: false }
+        });
+        
+        editor.onDidChangeModelContent(() => { runCode(); });
+        runCode();
+    });
+
+    // Editor Funktionen
+    function runCode() {
+        const code = editor.getValue();
+        const preview = document.getElementById('preview').contentWindow.document;
+        preview.open();
+        preview.write(code);
+        preview.close();
+    }
+
+    function newFile() {
+        if(confirm("Neues Dokument erstellen?")) {
+            editor.setValue(initialCode);
+            window.history.pushState({}, '', window.location.origin + window.location.pathname);
+        }
+    }
+
+    function downloadCode() {
+        const blob = new Blob([editor.getValue()], {type: "text/html"});
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "index.html";
+        a.click();
+    }
+
+    function triggerAction(action) { editor.trigger('keyboard', action, null); }
+    function setTheme(theme) { monaco.editor.setTheme(theme); }
+    function changeFontSize(size) { editor.updateOptions({ fontSize: size }); }
+
+    function toggleLang(lang) {
+        document.querySelectorAll('[lang]').forEach(el => {
+            el.style.display = (el.getAttribute('lang') === lang) ? '' : 'none';
+        });
+        document.getElementById('current-lang').innerText = lang.toUpperCase();
+    }
+
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.innerText = msg;
+        t.style.display = 'block';
+        setTimeout(() => { t.style.display = 'none'; }, 3000);
+    }
+</script>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyCqZwTy1vlEqwUBJjWl3rp86ip07e4j-pQ",
+        authDomain: "editor1234567890-c4fed.firebaseapp.com",
+        projectId: "editor1234567890-c4fed",
+        storageBucket: "editor1234567890-c4fed.firebasestorage.app",
+        messagingSenderId: "507350464527",
+        appId: "1:507350464527:web:e184a0ee920fa4c3178b7a",
+        databaseURL: "https://editor1234567890-c4fed-default-rtdb.europe-west1.firebasedatabase.app"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // Speichern
+    window.saveToCloud = async function() {
+        const params = new URLSearchParams(window.location.search);
+        let docId = params.get('document') || Math.random().toString(36).substring(2, 10);
+        
+        try {
+            await set(ref(db, 'documents/' + docId), {
+                content: editor.getValue(),
+                date: new Date().getTime()
+            });
+            const newUrl = window.location.origin + window.location.pathname + '?document=' + docId;
+            window.history.pushState({}, '', newUrl);
+            showToast("In Cloud gespeichert!");
+        } catch (e) {
+            alert("Fehler: " + e.message);
+        }
+    };
+
+    // Link kopieren
+    window.copyShareLink = function() {
+        const url = window.location.href;
+        if (!url.includes('?document=')) {
+            alert("Bitte erst speichern, um einen Link zu generieren!");
+            return;
+        }
+        navigator.clipboard.writeText(url).then(() => showToast("Link kopiert!"));
+    };
+
+    // Laden beim Start
+    window.addEventListener('load', async () => {
+        const docId = new URLSearchParams(window.location.search).get('document');
+        if (docId) {
+            // Warten bis Editor bereit
+            const checkEditor = setInterval(async () => {
+                if (editor) {
+                    clearInterval(checkEditor);
+                    const snapshot = await get(ref(db, 'documents/' + docId));
+                    if (snapshot.exists()) {
+                        editor.setValue(snapshot.val().content);
+                    }
+                }
+            }, 100);
+        }
+    });
+</script>
+
+</body>
+</html>
