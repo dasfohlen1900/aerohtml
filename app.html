@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Aeropus App</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs/editor/editor.main.min.css">
+    <style>
+        body { margin: 0; background: #1e1e1e; color: white; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        nav { background: #2d2d2d; height: 40px; display: flex; align-items: center; padding: 0 15px; border-bottom: 1px solid #333; gap: 15px; }
+        .menu { cursor: pointer; font-size: 14px; }
+        #container { display: flex; flex-grow: 1; }
+        #editor { width: 50%; }
+        #preview { width: 50%; background: white; border: none; }
+        .status { margin-left: auto; font-size: 12px; padding: 5px 10px; background: #333; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="menu">Datei</div>
+        <div class="menu">Bearbeiten</div>
+        <div class="menu" onclick="window.location.href='selectplan.html'">Plan wechseln</div>
+        <div class="status" id="planBadge">Plan: Free</div>
+    </nav>
+    <div id="container">
+        <div id="editor"></div>
+        <iframe id="preview"></iframe>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs/loader.min.js"></script>
+    <script>
+        let editor;
+        document.getElementById('planBadge').innerText = "Plan: " + (localStorage.getItem('userPlan') || 'Free').toUpperCase();
+
+        require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs' }});
+        require(['vs/editor/editor.main'], function() {
+            editor = monaco.editor.create(document.getElementById('editor'), {
+                value: "<h1>Hallo Aeropus!</h1>",
+                language: 'html',
+                theme: 'vs-dark',
+                automaticLayout: true
+            });
+            
+            editor.onDidChangeModelContent(() => {
+                const code = editor.getValue();
+                const preview = document.getElementById('preview').contentWindow.document;
+                preview.open();
+                preview.write(code);
+                preview.close();
+            });
+        });
+    </script>
+</body>
+</html>
